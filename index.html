@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0e1a33">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Dragon Paradise — Quần Đảo Rồng</title>
+<style>
+:root{--gold:#ffd24a;--card:#122444;--line:#2c4f86}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:linear-gradient(180deg,#0e1a33,#0f2748);color:#eef;min-height:100vh;padding-bottom:80px}
+header{position:sticky;top:0;z-index:50;background:rgba(8,16,34,.94);display:flex;gap:6px;align-items:center;padding:8px 10px;flex-wrap:wrap;border-bottom:2px solid #2a4a7a}
+.chip{background:#0d2140;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:13px;display:flex;align-items:center;gap:4px}
+.chip b{color:var(--gold)}
+#lvlwrap{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px}
+.bar{width:80px;height:10px;background:#0a1a33;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#39c6ff,#7af)}
+#pbar{max-width:900px;margin:8px auto 0;padding:0 10px}
+#pbar>div{background:#3a2e08;border:1px solid var(--gold);border-radius:10px;padding:6px 10px;font-size:13px;display:flex;gap:10px;align-items:center}
+#island{max-width:900px;margin:10px auto;padding:0 10px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.cell{aspect-ratio:1;background:#2e6b52;border:2px solid #1c3f30;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(15px,3.6vw,24px);cursor:pointer;position:relative;transition:.12s;color:#fff}
+.cell:hover{transform:scale(1.07);z-index:2}
+.cell.rock{background:#5a6472;border-color:#48505c}.cell.lake{background:#1c4f77;border-color:#16405f}
+.cell.target{outline:3px dashed var(--gold);animation:pl 1s infinite}
+@keyframes pl{50%{outline-color:transparent}}
+.tag{position:absolute;bottom:3px;font-size:9px;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:8px;white-space:nowrap;pointer-events:none;max-width:100%;overflow:hidden}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:50;display:flex;background:rgba(8,16,32,.97);border-top:2px solid #2a4a7a}
+nav button{flex:1;background:none;border:0;color:#9cb;padding:7px 1px;font-size:10px;cursor:pointer}
+nav button b{display:block;font-size:19px}
+nav button.on{color:var(--gold);background:#12264a;border-radius:8px 8px 0 0}
+#modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:12px}
+#modal.open{display:flex}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:16px;position:relative}
+.card h2{color:var(--gold);margin-bottom:10px;font-size:18px}
+.card .x{position:absolute;top:6px;right:10px;background:none;border:0;color:#fff;font-size:22px;cursor:pointer}
+.row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #1b335c;flex-wrap:wrap}
+.row:last-child{border-bottom:0}
+.spacer{flex:1}
+button.btn{background:linear-gradient(180deg,#2f80ff,#1c5fd0);border:0;color:#fff;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
+button.btn:disabled{background:#31415f;color:#8a97;cursor:not-allowed}
+button.btn.g{background:linear-gradient(180deg,#ffcf4a,#e0a010);color:#3a2500}
+button.btn.r{background:linear-gradient(180deg,#ff6b6b,#d03a3a)}
+.rtag{font-size:10px;padding:1px 6px;border-radius:8px;color:#fff}
+.r0{background:#5a6b85}.r1{background:#2f80ff}.r2{background:#9b59f0}.r3{background:linear-gradient(90deg,#ffb347,#ff7b39)}
+.eb{font-size:11px;border-radius:6px;padding:1px 5px;margin-right:3px}
+.sec{margin:12px 0 4px;color:#8fd;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.prog{height:8px;background:#0a1a33;border-radius:4px;overflow:hidden;flex:1;min-width:70px}
+.prog>i{display:block;height:100%;background:var(--gold)}
+#toasts{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:92%}
+.toast{background:rgba(0,0,0,.88);border:1px solid var(--line);padding:8px 16px;border-radius:20px;font-size:13px;animation:fd 2.6s both;max-width:100%}
+@keyframes fd{0%{opacity:0;transform:translateY(-8px)}10%,80%{opacity:1}100%{opacity:0}}
+.ts{font-size:11px;color:#9cc}
+.blog{background:#0a1a33;border-radius:8px;padding:10px;max-height:220px;overflow:auto;font-size:13px;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dragon-img{width:1.3em;height:1.3em;object-fit:contain;vertical-align:-0.25em}
+select,input{background:#0a1a33;color:#fff;border:1px solid var(--line);border-radius:6px;padding:6px;font-size:13px;max-width:100%}
+</style>
+</head>
+<body>
+<header>
+  <div class="chip">🪙 <b id="h-gold">0</b></div>
+  <div class="chip">🍖 <b id="h-food">0</b></div>
+  <div class="chip">💎 <b id="h-gem">0</b></div>
+  <div class="chip">🐉 <b id="h-drag">0</b></div>
+  <div id="lvlwrap">Lv.<b id="h-lvl">1</b><div class="bar"><i id="h-xp"></i></div><button class="btn" style="padding:4px 8px" onclick="openPanel('debug')">🐞</button></div>
+</header>
+<div id="pbar"></div>
+<div id="island"></div>
+<nav id="nav"></nav>
+<div id="modal" onclick="if(event.target===this)closeModal()"><div class="card" id="card"></div></div>
+<div id="toasts"></div>
+
+<script>
+/* ================= DỮ LIỆU GAME ================= */
+const ELS={
+ fire:{n:'Hỏa',e:'🔥',c:'#ff6b4a'}, water:{n:'Thủy',e:'💧',c:'#4ab3ff'},
+ nature:{n:'Mộc',e:'🌿',c:'#5dd45d'}, electric:{n:'Lôi',e:'⚡',c:'#ffd94a'},
+ ice:{n:'Băng',e:'❄️',c:'#9fdcff'}, dark:{n:'Ám',e:'🌙',c:'#b28ae8'}};
+const STRONG={fire:['nature'],nature:['water'],water:['fire'],electric:['water','fire'],ice:['nature','water'],dark:['ice','electric']};
+const RNAMES=['Thường','Hiếm','Sử Thi','Huyền Thoại'];
+const SPECIES=[
+ {id:'flame',n:'Hỏa Long',emoji:'🔥',e:['fire'],r:0,base:8},
+ {id:'tide',n:'Thủy Long',emoji:'💧',e:['water'],r:0,base:8},
+ {id:'leaf',n:'Mộc Long',emoji:'🍃',e:['nature'],r:0,base:8},
+ {id:'volt',n:'Lôi Long',emoji:'⚡',e:['electric'],r:0,base:8},
+ {id:'frost',n:'Băng Long',emoji:'❄️',e:['ice'],r:1,base:15},
+ {id:'shadow',n:'Ám Long',emoji:'🌘',e:['dark'],r:1,base:15},
+ {id:'steam',n:'Hơi Nước Long',emoji:'♨️',e:['fire','water'],r:1,base:16},
+ {id:'lotus',n:'Sen Long',emoji:'🪷',e:['water','nature'],r:1,base:16},
+ {id:'storm',n:'Bão Long',emoji:'🌪️',e:['water','electric'],r:1,base:18},
+ {id:'tundra',n:'Tundra Long',emoji:'🏔️',e:['nature','ice'],r:1,base:18},
+ {id:'magma',n:'Magma Long',emoji:'🌋',e:['fire','nature'],r:2,base:30},
+ {id:'plasma',n:'Plasma Long',emoji:'🌟',e:['fire','electric'],r:2,base:32},
+ {id:'thunderleaf',n:'Sấm Rừng Long',emoji:'🌩️',e:['nature','electric'],r:2,base:32},
+ {id:'glacier',n:'Vĩnh Băng Long',emoji:'🧊',e:['water','ice'],r:2,base:34},
+ {id:'umbra',n:'Umbra Long',emoji:'🦇',e:['dark','nature'],r:2,base:34},
+ {id:'neon',n:'Neon Long',emoji:'💡',e:['dark','electric'],r:2,base:32},
+ {id:'phoenix',n:'Phượng Hoàng',emoji:'🦅',e:['fire','ice'],r:3,base:60},
+ {id:'aurora',n:'Cực Quang Long',emoji:'🌌',e:['electric','ice'],r:3,base:60},
+ {id:'eclipse',n:'Nhật Thực Long',emoji:'🌑',e:['dark','fire'],r:3,base:65},
+ {id:'voidtide',n:'Vực Sâu Long',emoji:'🐙',e:['dark','water'],r:3,base:65},
+ {id:'dream',n:'Mơ Mộng Long',emoji:'💫',e:['dark','ice'],r:3,base:62}];
+const BYID={};SPECIES.forEach(s=>BYID[s.id]=s);
+const HAB_COST={fire:400,water:400,nature:400,electric:600,ice:800,dark:1000};
+const HABCAP=[0,500,1500,4000], HABSLOTS=[0,2,3,4], UPG=[0,1200,4000];
+const CROPS={berry:{n:'Dâu đất',t:60,cost:60,food:55},corn:{n:'Ngô vàng',t:300,cost:260,food:180},
+ fish:{n:'Cá suối',t:900,cost:700,food:700},feast:{n:'Tiệc rồng',t:2700,cost:1800,food:1900}};
+const DECO=['🌺','🏮','🗿','⛲','🎋'];
+const GOALS=[
+ {id:'g1',n:'Sở hữu 3 con rồng',c:()=>state.dragons.length>=3,rw:{gold:500},t:'+500🪙'},
+ {id:'g2',n:'Lai tạo thành công 1 rồng lai',c:()=>state.stats.bred>=1,rw:{food:300},t:'+300🍖'},
+ {id:'g3',n:'Thu tổng cộng 10.000 vàng',c:()=>state.stats.collected>=10000,rw:{gems:10},t:'+10💎'},
+ {id:'g4',n:'Cho rồng ăn 15 lần',c:()=>state.stats.fed>=15,rw:{gold:800},t:'+800🪙'},
+ {id:'g5',n:'Thắng 5 trận đấu trường',c:()=>state.stats.wins>=5,rw:{gems:15},t:'+15💎'},
+ {id:'g6',n:'Sưu tập 8 loài rồng',c:()=>state.dex.length>=8,rw:{gems:20},t:'+20💎'},
+ {id:'g7',n:'Đạt cấp 8 người chơi',c:()=>state.level>=8,rw:{gems:25},t:'+25💎'}];
+
+/* ================= TRẠNG THÁI ================= */
+function defaultState(){
+ const plots=Array(48).fill(null);
+ [3,10,17,33,40,45].forEach(i=>plots[i]={t:'x',k:'rock'});
+ [8,9,24,25].forEach(i=>plots[i]={t:'x',k:'lake'});
+ plots[21]={t:'hab',el:'fire',lvl:1,gold:0};
+ plots[28]={t:'farm',slots:[null,null]};
+ const st=pick(['flame','tide','leaf','volt']);
+ return {v:2,gold:800,food:120,gems:12,xp:0,level:1,seq:2,plots,
+  dragons:[{id:1,sp:st,lvl:1,hab:21}],eggs:[],breeding:null,dex:[st],goals:{},
+  stats:{collected:0,bred:0,fed:0,wins:0,hatched:0},farmCount:1,decoCount:0,last:Date.now()};
+}
+let state=null, placing=null, arenaSel=0, arenaRun=null, arenaTimer=null;
+
+function save(){try{state.last=Date.now();localStorage.setItem('dragonParadise_v2',JSON.stringify(state))}catch(e){}}
+function load(){
+ try{const raw=localStorage.getItem('dragonParadise_v2');if(raw)state=JSON.parse(raw)}catch(e){}
+ if(!state||!Array.isArray(state.plots)||state.plots.length!==48)state=defaultState();
+ state.stats=Object.assign({collected:0,bred:0,fed:0,wins:0,hatched:0},state.stats||{});
+ state.eggs=Array.isArray(state.eggs)?state.eggs:[];
+ state.dex=Array.isArray(state.dex)?state.dex:[];
+ const gap=Date.now()-(state.last||Date.now());
+ if(gap>10000){const e=accrue(Math.min(gap,8*3600e3));
+  if(e>0)setTimeout(()=>toast(`🌙 Chào mừng trở lại! Quần đảo tự kiếm +${fmt(e)} 🪙`),500)}
+}
+
+/* ================= TIỆN ÍCH ================= */
+const $=s=>document.querySelector(s);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function fmt(n){n=Math.floor(n);if(!Number.isFinite(n))return'0';
+ if(n>=1e9)return(n/1e9).toFixed(2)+'B';if(n>=1e6)return(n/1e6).toFixed(2)+'M';
+ if(n>=1e4)return(n/1e3).toFixed(1)+'k';return n+''}
+function timeStr(ms){ms=Math.max(0,ms);const s=Math.ceil(ms/1e3);
+ if(s<60)return s+'s';const m=Math.floor(s/60);if(m<60)return m+'p'+(s%60?s%60+'s':'');
+ const h=Math.floor(m/60);return h+'h'+(m%60?m%60+'p':'')}
+function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=m;
+ $('#toasts').appendChild(t);setTimeout(()=>t.remove(),2700)}
+function spend(c){if((state.gold>=(c.gold||0))&&(state.food>=(c.food||0))&&(state.gems>=(c.gems||0))){
+ state.gold-=c.gold||0;state.food-=c.food||0;state.gems-=c.gems||0;save();updateHUD();return true}return false}
+function gain(o){state.gold+=o.gold||0;state.food+=o.food||0;state.gems+=o.gems||0;save();updateHUD()}
+function xpNeed(l){return 120*l}
+function gainXP(n){state.xp+=n;let up=false;
+ while(state.level<60&&state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;state.gems+=5;up=true}
+ if(up){toast(`⬆️ Lên cấp ${state.level}! +5 💎`);sfx('win')}save();updateHUD()}
+
+/* ---- âm thanh (tổng hợp WebAudio, 0 KB assets) ---- */
+let AC=null,mute=false;
+function sfx(kind){if(mute)return;try{
+ AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ const seq=kind==='coin'?[880,1320]:kind==='hatch'?[523,659,784,1047]:kind==='win'?[392,523,659]:[440];
+ const t=AC.currentTime;
+ seq.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;
+  g.gain.setValueAtTime(.07,t+i*.09);g.gain.exponentialRampToValueAtTime(.001,t+i*.09+.17);
+  o.connect(g).connect(AC.destination);o.start(t+i*.09);o.stop(t+i*.09+.2)})}catch(e){}}
+
+/* ---- asset-loader: tự nhận hình thật nếu có assets/dragon_<id>.png ---- */
+const IMG={};
+Object.keys(BYID).forEach(id=>{const im=new Image();im.onload=()=>{IMG[id]=1};im.src=`assets/dragon_${id}.png`});
+const dicon=sp=>IMG[sp.id]?`<img class="dragon-img" src="assets/dragon_${sp.id}.png" alt="">`:sp.emoji;
+
+/* ================= KINH TẾ ================= */
+const dragonsIn=i=>state.dragons.filter(d=>d.hab===i);
+const dRate=d=>Math.round(BYID[d.sp].base*(1+.25*(d.lvl-1)));
+const habRate=i=>dragonsIn(i).reduce((a,d)=>a+dRate(d),0)*(1+.02*state.decoCount);
+function accrue(dtMs=0){let earned=0;
+ state.plots.forEach((p,i)=>{if(!p||p.t!=='hab')return;
+  const gb=dtMs>0?habRate(i)*dtMs/60000:habRate(i)/60;
+  const ng=Math.min(HABCAP[p.lvl],p.gold+gb);
+  earned+=Math.max(0,ng-p.gold);p.gold=ng});
+ return earned}
+function updateHUD(){$('#h-gold').textContent=fmt(state.gold);$('#h-food').textContent=fmt(state.food);
+ $('#h-gem').textContent=state.gems;$('#h-drag').textContent=state.dragons.length;
+ $('#h-lvl').textContent=state.level;$('#h-xp').style.width=Math.min(100,state.xp/xpNeed(state.level)*100)+'%'}
+
+/* ================= ĐẢO ================= */
+function habPrice(el){return Math.round(HAB_COST[el]*Math.pow(1.6,state.plots.filter(p=>p&&p.t==='hab'&&p.el===el).length))}
+function renderIsland(){
+ $('#pbar').innerHTML=placing?`<div>📍 Đang đặt: <b>${placing.label}</b> — chạm vào ô trống
+  <button class="btn r" style="padding:3px 10px" onclick="placing=null;renderIsland()">Huỷ</button></div>`:'';
+ const isl=$('#island');isl.innerHTML='';
+ state.plots.forEach((p,i)=>{
+  const c=document.createElement('div');c.className='cell';
+  if(p){
+   if(p.t==='x'){c.classList.add(p.k);c.textContent=p.k==='lake'?'🌊':'🪨'}
+   else if(p.t==='hab'){c.style.background=ELS[p.el].c+'33';c.style.borderColor=ELS[p.el].c;
+    const n=dragonsIn(i).length;
+    c.innerHTML=`${ELS[p.el].e}<span class="tag">💰${fmt(p.gold)} · 🐉${n}/${HABSLOTS[p.lvl]}</span>`}
+   else if(p.t==='farm'){const rdy=p.slots.filter(s=>s&&s.end<=Date.now()).length;
+    c.innerHTML=`🌾<span class="tag">${rdy?'✅ Xong '+rdy:p.slots.filter(Boolean).length+'/2 ô'}</span>`}
+   else if(p.t==='deco')c.textContent=p.e;
+  }else{if(placing)c.classList.add('target')}
+  c.onclick=()=>clickCell(i);isl.appendChild(c)})}
+function clickCell(i){
+ if(placing){if(state.plots[i])return toast('⚠️ Chỉ đặt vào ô trống!');return tryPlace(i)}
+ const p=state.plots[i];
+ if(!p)return openModal('build',i);
+ if(p.t==='hab')openModal('hab',i);
+ else if(p.t==='farm')openModal('farm',i);
+ else openModal('deco',i)}
+function tryPlace(i){
+ const o=placing;if(!o)return;
+ const cost=o.type==='hab'?{gold:habPrice(o.el)}:o.type==='farm'?{gold:800*state.farmCount}:{gold:400*state.decoCount};
+ if(!spend(cost)){toast('❌ Không đủ tài nguyên!');placing=null;renderIsland();return}
+ if(o.type==='hab')state.plots[i]={t:'hab',el:o.el,lvl:1,gold:0};
+ else if(o.type==='farm'){state.plots[i]={t:'farm',slots:[null,null]};state.farmCount++}
+ else{state.plots[i]={t:'deco',e:pick(DECO)};state.decoCount++}
+ placing=null;sfx('win');save();renderIsland();toast('✅ Đã xây xong!')}
+
+/* ================= MODAL / PANEL ================= */
+let curModal=null,curArg=null;
+const BUILDERS={shop:buildShop,dragons:buildDragons,breed:buildBreed,arena:buildArena,quests:buildQuests,book:buildBook,debug:buildDebug,build:buildMenu,hab:buildHab,farm:buildFarm,deco:buildDeco};
+function openModal(k,a){if(!BUILDERS[k])return;curModal=k;curArg=a;
+ $('#card').innerHTML='<button class="x" onclick="closeModal()">✕</button>'+BUILDERS[k](a);
+ $('#modal').classList.add('open');refreshTimers()}
+function closeModal(){$('#modal').classList.remove('open');curModal=null;
+ if(arenaTimer){clearInterval(arenaTimer);arenaTimer=null}}
+function refreshModal(){if(curModal)openModal(curModal,curArg)}
+function openPanel(k){markNav(k);
+ if(k==='island'){closeModal();placing=null;renderIsland()}else openModal(k)}
+function markNav(k){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k))}
+function refreshTimers(){document.querySelectorAll('[data-end]').forEach(e=>{
+ e.textContent=timeStr(+e.dataset.end-Date.now())})}
+
+/* ---- island cell modals ---- */
+function buildMenu(i){
+ const habs=Object.keys(ELS).map(el=>`<div class="row">${ELS[el].e} Chuồng ${ELS[el].n}
+  <span class="ts">tối đa ${HABSLOTS[1]} 🐉 · kho ${HABCAP[1]}🪙</span><span class="spacer"></span>
+  <button class="btn g" onclick="enterPlacing({type:'hab',el:'${el}',label:'Chuồng ${ELS[el].n} (${fmt(habPrice(el))}🪙)',cost:${habPrice(el)}})">🪙 ${fmt(habPrice(el))}</button></div>`).join('');
+ return `<h2>🏗️ Xây dựng</h2>${habs}
+ <div class="row">🌾 Trang trại <span class="ts">2 ô trồng cây</span><span class="spacer"></span>
+  <button class="btn g" onclick="enterPlacing({type:'farm',label:'Trang trại (🪙 ${fmt(800*state.farmCount)})'})">🪙 ${fmt(800*state.farmCount)}</button></div>
+ <div class="row">${pick(DECO)} Trang trí <span class="ts">+2% vàng/giờ toàn đảo</span><span class="spacer"></span>
+  <button class="btn g" onclick="enterPlacing({type:'deco',label:'Vật trang trí (🪙 ${fmt(400*state.decoCount)})'})">🪙 ${fmt(400*state.decoCount)}</button></div>`}
+function enterPlacing(o){placing=o;closeModal();markNav('island');renderIsland();
+ toast('👉 Chạm vào ô đất trống để đặt')}
+function buildHab(i){
+ const p=state.plots[i],n=dragonsIn(i);
+ const ds=n.map(d=>`<div class="row">${dicon(BYID[d.sp])} <b>${BYID[d.sp].n}</b> Lv.${d.lvl}
+  <span class="ts">+${fmt(dRate(d))}🪙/p</span><span class="spacer"></span>
+  <button class="btn" onclick="feedD(${d.id})" ${d.lvl>=10?`disabled`:''}>🍖 ${fmt(20*d.lvl)}</button>
+  <select onchange="moveD(${d.id},this.value)"><option value="">↗ Chuyển…</option>${habOptions(d)}</select></div>`).join('');
+ const up=p.lvl<3?`<button class="btn" onclick="habUp(${i})">⬆️ Nâng cấp Lv.${p.lvl+1} — 🪙 ${fmt(UPG[p.lvl])}</button>`:'';
+ return `<h2>${ELS[p.el].e} Chuồng ${ELS[p.el].n} <span class="rtag r${''}">Lv.${p.lvl}</span></h2>
+ <div class="row">💰 Đang giữ: <b>${fmt(p.gold)}</b> / ${fmt(HABCAP[p.lvl])} <span class="spacer"></span>
+  <button class="btn g" onclick="collectHab(${i})" ${p.gold<1?'disabled':''}>Thu ${fmt(p.gold)} 🪙</button></div>
+ <div class="sec">Rồng trong chuồng (${n.length}/${HABSLOTS[p.lvl]})</div>${ds||'<div class="ts" style="padding:8px">Chưa có rồng — vào mục 🐉 Rồng để chuyển vào.</div>'}
+ <div class="row">${up}<span class="spacer"></span>
+  <button class="btn r" onclick="sellHab(${i})" ${n.length?'disabled':''}>Bán (${fmt(Math.round(habPrice(p.el)/2))}🪙)</button></div>`}
+function collectHab(i){const p=state.plots[i];const g=Math.floor(p.gold);if(g<1)return;
+ state.gold+=g;state.stats.collected+=g;p.gold-=g;sfx('coin');save();updateHUD();refreshModal();renderIsland()}
+function habUp(i){const p=state.plots[i];
+ if(!spend({gold:UPG[p.lvl]}))return toast('❌ Không đủ vàng!');
+ p.lvl++;sfx('win');toast('⬆️ Chuồng lên Lv.'+p.lvl);refreshModal();renderIsland()}
+function sellHab(i){const p=state.plots[i];if(dragonsIn(i).length)return;
+ state.gold+=Math.round(habPrice(p.el)/2);state.plots[i]=null;save();updateHUD();closeModal();renderIsland();toast('Đã bán chuồng')}
+function buildFarm(i){
+ const p=state.plots[i];
+ const rows=p.slots.map((s,si)=>{
+  if(!s)return `<div class="row">🟫 Ô ${si+1}: trống <span class="spacer"></span>${Object.keys(CROPS).map(k=>
+   `<button class="btn" onclick="plantCrop(${i},${si},'${k}')">${CROPS[k].n} 🪙${CROPS[k].cost}</button>`).join('')}</div>`;
+  const rem=s.end-Date.now(),C=CROPS[s.crop];
+  return `<div class="row">🌱 ${C.n} <div class="prog"><i style="width:${Math.min(100,100-rem/C.t*100)}%"></i></div>
+   <span data-end="${s.end}" class="ts"></span><span class="spacer"></span>
+   ${rem<=0?`<button class="btn g" onclick="harvestCrop(${i},${si})">🍖 +${C.food}</button>`
+    :`<button class="btn" onclick="speedCrop(${i},${si})">💎 ${Math.ceil(rem/60000)+1}</button>`}</div>`}).join('');
+ return `<h2>🌾 Trang trại</h2>${rows}
+ <div class="row"><button class="btn r" onclick="sellFarm(${i})" ${p.slots.some(Boolean)?'disabled':''}>Bán trại (🪙 400)</button></div>`}
+function plantCrop(i,si,k){const C=CROPS[k];const p=state.plots[i];
+ if(!spend({gold:C.cost}))return toast('❌ Không đủ vàng!');
+ p.slots[si]={crop:k,end:Date.now()+C.t*1000};sfx('click');refreshModal();renderIsland()}
+function harvestCrop(i,si){const p=state.plots[i];const s=p.slots[si];
+ if(!s||s.end>Date.now())return;state.food+=CROPS[s.crop].food;p.slots[si]=null;
+ sfx('coin');save();updateHUD();refreshModal();renderIsland()}
+function speedCrop(i,si){const s=state.plots[i].slots[si];const rem=s.end-Date.now();
+ if(!spend({gems:Math.ceil(rem/60000)+1}))return toast('❌ Không đủ 💎!');
+ s.end=Date.now();refreshModal();renderIsland()}
+function sellFarm(i){state.gold+=400;state.farmCount--;state.plots[i]=null;save();updateHUD();closeModal();renderIsland()}
+function buildDeco(i){return `<h2>${state.plots[i].e} Trang trí</h2>
+ <div class="row">+2% vàng/giờ cho toàn đảo <span class="spacer"></span>
+ <button class="btn r" onclick="state.gold+=200;state.decoCount--;state.plots[${i}]=null;save();updateHUD();closeModal();renderIsland()">Bán (🪙 200)</button></div>`}
+
+/* ---- shop ---- */
+function buildShop(){
+ const eggQ=state.eggs.length>=2;
+ return `<h2>🛒 Cửa hàng</h2>
+ <div class="sec">🥚 Trứng</div>
+ <div class="row">🥚 Trứng ngẫu nhiên <span class="ts">rồng hệ cơ bản · nở 45s</span><span class="spacer"></span>
+  <button class="btn g" ${eggQ?'disabled':''} onclick="buyEgg('random')">🪙 800</button></div>
+ <div class="row">🪄 Trứng bí ẩn <span class="ts">Tỉ lệ hiếm cao hơn!</span><span class="spacer"></span>
+  <button class="btn" ${eggQ?'disabled':''} onclick="buyEgg('mystery')">💎 30</button></div>
+ ${eggQ?'<div class="ts" style="padding:4px">⚠️ Ấp ủ đã đầy (2 trứng) — hãy ấp nở trước.</div>':''}
+ <div class="sec">🏢 Xây dựng</div>
+ <div class="ts" style="padding:4px">Chạm vào một ô đất trống trên đảo để mở menu xây dựng.</div>
+ <div class="row">🏗️ Mở menu xây <span class="spacer"></span><button class="btn" onclick="closeModal();markNav('island')">Đến đảo ↗</button></div>`}
+function buyEgg(kind){
+ if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
+ let sp;
+ if(kind==='random'){if(!spend({gold:800}))return toast('❌ Không đủ vàng!');
+  sp=pick(['flame','tide','leaf','volt'])}
+ else{if(!spend({gems:30}))return toast('❌ Không đủ 💎!');
+  const r=Math.random(),tier=r<.4?0:r<.7?1:r<.9?2:3;
+  sp=pick(SPECIES.filter(s=>s.r===tier)).id}
+ state.eggs.push({sp,end:Date.now()+45000});save();
+ toast('🥚 Nhận được một quả trứng!');
+ if(curModal==='breed')refreshModal()}
+
+/* ---- dragons ---- */
+function habOptions(d){let h='';
+ state.plots.forEach((p,i)=>{if(p&&p.t==='hab'&&BYID[d.sp].e.includes(p.el)&&dragonsIn(i).length<HABSLOTS[p.lvl])
+  h+=`<option value="${i}">${ELS[p.el].e}${ELS[p.el].n} (${dragonsIn(i).length}/${HABSLOTS[p.lvl]})</option>`});
+ return h}
+function buildDragons(){
+ const rows=state.dragons.map(d=>{const sp=BYID[d.sp];
+  const loc=d.hab>=0?`${ELS[state.plots[d.hab].el].e} Chuồng ${ELS[state.plots[d.hab].el].n}`:'🏕️ Chưa vào chuồng (không sinh vàng)';
+  return `<div class="row">${dicon(sp)} <div><b>${sp.n}</b> <span class="rtag r${sp.r}">${RNAMES[sp.r]}</span><br>
+   <span class="ts">${sp.e.map(e=>ELS[e].e+ELS[e].n).join(' ')} · ${loc}</span></div><span class="spacer"></span>
+   <b>Lv.${d.lvl}</b><button class="btn" onclick="feedD(${d.id})" ${d.lvl>=10?'disabled':''}>🍖 ${fmt(20*d.lvl)}</button>
+   <select onchange="moveD(${d.id},this.value)"><option value="">↗ Chuyển…</option>${habOptions(d)}</select></div>`}).join('');
+ return `<h2>🐉 Rồng của bạn (${state.dragons.length})</h2>${rows||'<div class="ts">Chưa có rồng nào.</div>'}
+ <div class="ts" style="padding:8px">💡 Rồng lai chỉ nở từ <b>🥚 Lai tạo</b> · Cho ăn tăng Lv → càng nhiều vàng & mạnh hơn ở ⚔️.</div>`}
+function feedD(id){const d=state.dragons.find(x=>x.id===id);if(!d)return;
+ if(d.lvl>=10)return toast('⭐ Đã tối đa Lv.10!');
+ if(!spend({food:20*d.lvl}))return toast('❌ Không đủ 🍖!');
+ d.lvl++;state.stats.fed++;gainXP(10*d.lvl);sfx('hatch');
+ toast(`🍖 ${BYID[d.sp].n} lên Lv.${d.lvl}!`);refreshModal();renderIsland()}
+function moveD(id,v){const d=state.dragons.find(x=>x.id===id);if(!d||v==='')return;
+ const i=+v,p=state.plots[i];
+ if(!p||p.t!=='hab'||!BYID[d.sp].e.includes(p.el)||dragonsIn(i).length>=HABSLOTS[p.lvl])return;
+ d.hab=i;sfx('click');save();refreshModal();renderIsland();toast(`↗ ${BYID[d.sp].n} đã chuyển chuồng`)}
+
+/* ---- breeding ---- */
+function fuse(eA,eB){
+ const set=[...new Set([...eA,...eB])];
+ for(let i=0;i<set.length;i++)for(let j=i+1;j<set.length;j++){
+  const key=[set[i],set[j]].sort().join(',');
+  const h=SPECIES.find(s=>s.e.length===2&&[...s.e].sort().join(',')===key);
+  if(h)return h}
+ return BYID[pick(set)]}
+function buildBreed(){
+ let html='';
+ if(state.breeding){const b=state.breeding,rem=b.end-Date.now();
+  html+=`<div class="sec">❤️‍🔥 Đang ấp tình yêu…</div>
+  <div class="row">${BYID[b.aSp].emoji} ${BYID[b.aSp].n} + ${BYID[b.bSp].emoji} ${BYID[b.bSp].n}
+   <div class="prog"><i style="width:${Math.min(100,100-rem/60000*100)}%"></i></div>
+   <span class="ts" data-end="${b.end}"></span></div>
+  ${rem<=0?`<div class="row"><button class="btn g" onclick="claimEgg()">🥚 Nhận trứng!</button></div>`
+   :`<div class="row"><button class="btn r" onclick="breedCancel()">Huỷ (hoàn 🪙150)</button></div>`}`}
+ else html+=`<div class="sec">❤️‍🔥 Trại lai tạo</div>
+  <div class="row">Rồng bố: <select id="bA">${state.dragons.filter(d=>d.lvl>=3).map(d=>`<option value="${d.id}">${BYID[d.sp].emoji} ${BYID[d.sp].n} Lv.${d.lvl}</option>`).join('')||'<option value="">Chưa có rồng Lv.3+</option>'}</select></div>
+  <div class="row">Rồng mẹ: <select id="bB">${state.dragons.filter(d=>d.lvl>=3).map(d=>`<option value="${d.id}">${BYID[d.sp].emoji} ${BYID[d.sp].n} Lv.${d.lvl}</option>`).join('')||'<option value="">–</option>'}</select></div>
+  <div class="row">PHỤ HUYNH CẦN Lv.3 TRỞ LÊN <span class="spacer"></span>
+  <button class="btn g" onclick="startBreed()">❤️ Laiving — 🪙 300 · 60s</button></div>`;
+ html+=`<div class="sec">🥚 Ấp ủ (${state.eggs.length}/2)</div>`;
+ if(!state.eggs.length)html+='<div class="ts" style="padding:6px">Chưa có trứng nào.</div>';
+ state.eggs.forEach((e,i)=>{const sp=BYID[e.sp],rdy=e.end<=Date.now();
+  html+=`<div class="row">${rdy?dicon(sp):'❓'} <b>${rdy?sp.n:'Trứng (ẩn)'}</b>
+   <span class="rtag r${sp.r}">${rdy?RNAMES[sp.r]:'???'}</span><span class="spacer"></span>
+   ${rdy?`<button class="btn g" onclick="hatchEgg(${i})">🐣 Nở!</button>`
+    :`<span class="ts" data-end="${e.end}"></span><button class="btn" onclick="speedEgg(${i})">💎 ${Math.ceil((e.end-Date.now())/60000)+1}</button>`}</div>`});
+ return `<h2>🥚 Lai tạo &amp; Ấp ủ</h2>${html}
+ <div class="ts" style="padding:6px">Lai 2 hệ khác nhau có thể ra <b>rồng lai</b> hiếm hơn — thử Hỏa+Băng 👀</div>`}
+function startBreed(){
+ const a=state.dragons.find(d=>d.id===+$('#bA').value),b=state.dragons.find(d=>d.id===+$('#bB').value);
+ if(!a||!b)return toast('⚠️ Cần 2 rồng Lv.3+!');
+ if(a.id===b.id)return toast('⚠️ Không thể lai với chính nó!');
+ if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
+ if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
+ let res=fuse(a.e?BYID[d]:BYID[a.sp].e,BYID[b.sp].e,['']);// placeholder tránh lỗi cú pháp
+ return}
+/* NOTE: hàm startBreed thật ở dưới (đè bản placeholder) */
+function startBreedReal(){
+ const a=state.dragons.find(d=>d.id===+$('#bA').value),b=state.dragons.find(d=>d.id===+$('#bB').value);
+ if(!a||!b||a.id===b.id)return toast('⚠️ Kiểm tra lại bố mẹ!');
+ if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
+ if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
+ let res=fuse(BYID[a.sp].e,BYID[b.sp].e);
+ if(BYID[a.sp].r>=2&&BYID[b.sp].r>=2&&Math.random()<.2)
+  res=pick(SPECIES.filter(s=>s.r===3&&s.e.some(e=>BYID[a.sp].e.includes(e)||BYID[b.sp].e.includes(e)))||SPECIES.filter(s=>s.r===3))||res;
+ state.breeding={a:a.id,b:b.id,aSp:a.sp,bSp:b.sp,res:res.id,end:Date.now()+60000};
+ gainXP(50);sfx('click');save();refreshModal();toast('❤️‍🔥 Hai rồng đã vào trại lai tạo!')}
+function claimEgg(){
+ if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đầy — hãy nở trứng trước!');
+ const b=state.breeding;if(!b)return;
+ state.eggs.push({sp:b.res,end:Date.now()+45000});
+ state.breeding=null;state.stats.bred++;save();refreshModal();toast('🥚 Nhận trứng từ trại lai!')}
+function breedCancel(){if(!state.breeding)return;state.breeding=null;state.gold+=150;save();updateHUD();refreshModal()}
+function hatchEgg(i){
+ const e=state.eggs[i];if(!e||e.end>Date.now())return;
+ let t=-1;const el=BYID[e.sp].e;
+ for(let j=0;j<48;j++){const p=state.plots[j];
+  if(p&&p.t==='hab'&&el.includes(p.el)&&dragonsIn(j).length<HABSLOTS[p.lvl]){t=j;break}}
+ if(t<0)return toast('⚠️ Cần chuồng '+el.map(k=>ELS[k].n).join('/')+' còn chỗ trống!');
+ const d={id:state.seq++,sp:e.sp,lvl:1,hab:t};
+ state.dragons.push(d);state.eggs.splice(i,1);state.stats.hatched++;sfx('hatch');
+ if(!state.dex.includes(e.sp)){state.dex.push(e.sp);state.gems+=2;toast(`📖 Loài mới: ${BYID[e.sp].n}! +2💎`)}
+ toast(`🐣 ${BYID[e.sp].n} đã nở!`);gainXP(40);refreshModal();renderIsland()}
+function speedEgg(i){const e=state.eggs[i];
+ if(!spend({gems:Math.ceil((e.end-Date.now())/60000)+1}))return toast('❌ Không đủ 💎!');
+ e.end=Date.now();refreshModal()}
+
+/* ---- arena ---- */
+function mkFighter(spId,lvl){const sp=BYID[spId];
+ return{sp,lvl,hp:80+25*lvl+30*sp.r,max:80+25*lvl+30*sp.r,atk:10+3*lvl+2*sp.r,spd:10+lvl,
+  nname:`${sp.emoji} ${sp.n} (Lv.${lvl})`}}
+function simulate(A,B){const steps=[];let turn=A.spd>=B.spd?0:1;
+ while(A.hp>0&&B.hp>0){const at=turn?B:A,df=turn?A:B;
+  const adv=(STRONG[at.sp.e[0]]||[]).includes(df.sp.e[0]);
+  const dmg=Math.max(1,Math.round(at.atk*(adv?1.5:1)*(0.85+Math.random()*0.3)));
+  df.hp-=dmg;
+  steps.push(`<b>${at.nname}</b> tấn công → <b>${df.nname}</b> -${dmg} ${adv?'⚡khắc chế!':''} <span class="ts">(HP còn ${Math.max(0,df.hp)})</span>`);
+  turn^=1}
+ return{steps,win:A.hp>0}}
+function buildArena(){
+ let html='';
+ if(arenaRun){
+  const shown=arenaRun.steps.slice(0,arenaRun.i).map(s=>`<div>${s}</div>`).join('')||'<div>Chuẩn bị…</div>';
+  html=`<div class="blog">${shown}</div>
+  ${arenaRun.i>=arenaRun.steps.length?`<div class="row"><b>${arenaRun.win?'🏆 CHIẾN THẮNG!':'💀 Thất bại…'}</b><span class="spacer"></span>
+   <button class="btn g" onclick="arenaRun=null;refreshModal()">⚔️ Đấu tiếp</button></div>`:''}`}
+ else{
+  html=`<div class="row">Chọn chiến binh: <select id="aSel">${state.dragons.map(d=>`<option value="${d.id}" ${d.id===arenaSel?'selected':''}>${BYID[d.sp].emoji} ${BYID[d.sp].n} Lv.${d.lvl}</option>`).join('')}</select></div>
+  <div class="row">Khắc chế hệ: 🔥→🌿→💧→🔥 · ⚡→💧🔥 · ❄️→🌿💧 · 🌙→❄️⚡ <span class="spacer"></span>
+  <button class="btn g" onclick="startArena()">⚔️ Chiến đấu!</button></div>`}
+ return `<h2>⚔️ Đấu trường — Thắng: ${state.stats.wins}</h2>${html}`}
+function startArena(){
+ arenaSel=+$('#aSel').value;const d=state.dragons.find(x=>x.id===arenaSel);if(!d)return;
+ const lvl=Math.min(10,Math.max(1,state.level+(Math.random()<.4?1:0)));
+ const tier=Math.random(),r=tier<.5?0:tier<.8?1:tier<.95?2:3;
+ const enemy=mkFighter(pick(SPECIES.filter(s=>s.r===r)).id,lvl);
+ const me=mkFighter(d.sp,d.lvl);
+ const sim=simulate(me,enemy);
+ arenaRun={steps:sim.steps,win:sim.win,i:0};
+ if(arenaTimer)clearInterval(arenaTimer);
+ arenaTimer=setInterval(()=>{
+  if(!arenaRun){clearInterval(arenaTimer);arenaTimer=null;return}
+  arenaRun.i++;
+  if(arenaRun.i>arenaRun.steps.length){
+   clearInterval(arenaTimer);arenaTimer=null;
+   if(arenaRun.win){const g=150+80*enemy.lvl;state.gold+=g;state.stats.wins++;gainXP(60);sfx('win');
+    toast(`🏆 Thắng +${fmt(g)}🪙 +60XP!`)}
+   else{gainXP(20);sfx('click');toast('💀 Thua… +20XP kinh nghiệm')}
+   save();updateHUD()}
+  if(curModal==='arena'&&arenaRun)openModal('arena')},600);
+ openModal('arena')}
+
+/* ---- quests & book ---- */
+function buildQuests(){
+ return `<h2>🎯 Nhiệm vụ</h2>`+GOALS.map(g=>{
+  const done=g.c(),claimed=state.goals[g.id];
+  return `<div class="row">${claimed?'✅':done?'🎁':'⬜'} ${g.n} <span class="ts">${g.t}</span><span class="spacer"></span>
+   ${claimed?'':`<button class="btn g" ${done?'':'disabled'} onclick="claimGoal('${g.id}')">Nhận</button>`}</div>`}).join('')}
+function claimGoal(id){const g=GOALS.find(x=>x.id===id);
+ if(!g||state.goals[id]||!g.c())return;state.goals[id]=true;gain(g.rw);sfx('win');
+ toast(`🎁 Phần thưởng: ${g.t}`);refreshModal()}
+function buildBook(){
+ return `<h2>📖 Bộ sưu tập (${state.dex.length}/${SPECIES.length})</h2>
+ <div class="grid2">`+SPECIES.map(s=>{const has=state.dex.includes(s.id);
+  return `<div class="row">${has?dicon(s):'❓'} <div><b>${has?s.n:'???'}</b> <span class="rtag r${s.r}">${RNAMES[s.r]}</span><br>
+  <span class="ts">${has?s.e.map(e=>ELS[e].e+ELS[e].n).join(' '):'Chưa phát hiện'}</span></div></div>`}).join('')+'</div>'}
+
+/* ---- debug / self-test ---- */
+function buildDebug(){
+ return `<h2>🐞 Debug &amp; Chẩn đoán</h2>
+ <div class="row"><button class="btn" onclick="dbg('+gold')">🪙 +10k</button>
+ <button class="btn" onclick="dbg('+food')">🍖 +1k</button>
+ <button class="btn" onclick="dbg('+gem')">💎 +10</button>
+ <button class="btn" onclick="dbgTime()">⏩ Trừ 1h mọi timer</button></div>
+ <div class="row"><button class="btn" onclick="dbgExport()">📤 Xuất save</button>
+ <button class="btn" onclick="dbgImport()">📥 Nhập save</button>
+ <button class="btn r" onclick="if(confirm('Xoá toàn bộ?')){localStorage.removeItem('dragonParadise_v2');location.reload()}">🗑️ Reset</button>
+ <label style="margin-left:auto;font-size:13px">🔇 <input type="checkbox" onchange="mute=this.checked"></label></div>
+ <div class="row"><button class="btn g" onclick="$('#dbgout').innerHTML=runTests()">🧪 CHẠY CHẨN ĐOÁN &amp; TỰ SỬA</button></div>
+ <div id="dbgout" class="blog">${lastTest}</div>`}
+let lastTest='Chưa chạy chẩn đoán. Nhấn nút để kiểm tra toàn bộ dữ liệu game.';
+function dbg(k){if(k==='+gold')state.gold+=10000;if(k==='+food')state.food+=1000;if(k==='+gem')state.gems+=10;
+ save();updateHUD();toast('✅ Đã cộng tài nguyên (test)')}
+function dbgTime(){
+ state.eggs.forEach(e=>e.end-=3600e3);
+ if(state.breeding)state.breeding.end-=3600e3;
+ state.plots.forEach(p=>{if(p&&p.t==='farm')p.slots.forEach(s=>{if(s)s.end-=3600e3})});
+ accrue(3600e3);toast('⏩ Đã tua nhanh 1 giờ');save();refreshModal();renderIsland()}
+function dbgExport(){const j=JSON.stringify(state);
+ if(navigator.clipboard)navigator.clipboard.writeText(j).then(()=>toast('📤 Đã copy save vào clipboard'),()=>prompt('Copy save:',j));
+ else prompt('Copy save:',j)}
+function dbgImport(){const j=prompt('Dán nội dung save:');if(!j)return;
+ try{const s=JSON.parse(j);if(!s.plots)throw 0;
+  localStorage.setItem('dragonParadise_v2',j);location.reload()}catch(e){toast('❌ Save không hợp lệ!')}}
+function runTests(){
+ const res=[];let fixes=0;const fix=n=>{fixes++;res.push(['⚠️ '+n,false])};
+ let ok=false;try{localStorage.setItem('__t','1');localStorage.removeItem('__t');ok=true}catch(e){}
+ res.push([ok?'✅ localStorage hoạt động':'❌ localStorage bị chặn (chế độ ẩn danh?) — game vẫn chơi nhưng không lưu',ok]);
+ ['gold','food','gems','xp','level','seq'].forEach(k=>{
+  if(!Number.isFinite(state[k])){state[k]=k==='level'?1:0;fix(`Trường "${k}" hỏng → đã đặt lại`)}});
+
+ if(!Array.isArray(state.plots)||state.plots.length!==48){
+  const old=state.plots||[];state.plots=defaultState().plots;
+  old.forEach((p,i)=>{if(i<48&&p)state.plots[i]=p});fix('Mảng ô đất sai kích thước → đã dựng lại')}
+ state.plots.forEach((p,i)=>{
+  if(p&&!['hab','farm','deco','x'].includes(p.t)){state.plots[i]=null;fix(`Ô ${i}: loại công trình lạ → xoá`)}
+  if(p&&p.t==='hab'&&!ELS[p.el]){state.plots[i]=null;fix(`Ô ${i}: chuồng thiếu hệ → xoá`)}
+  if(p&&p.t==='hab'){if(!Number.isFinite(p.gold)||p.gold<0){p.gold=0;fix(`Ô ${i}: vàng chuồng lỗi → reset`)}
+   if(p.gold>HABCAP[p.lvl]){p.gold=HABCAP[p.lvl];fix(`Ô ${i}: vàng vượt kho → giới hạn lại`)}}
+  if(p&&p.t==='farm'&&!Array.isArray(p.slots)){state.plots[i]=null;fix(`Ô ${i}: trang trại lỗi → xoá`)}});
+
+ const before=state.dragons.length;
+ state.dragons=(state.dragons||[]).filter(d=>d&&BYID[d.sp]&&Number.isFinite(d.lvl)&&d.lvl>=1);
+ if(state.dragons.length<before)fix('Có rồng dữ liệu hỏng → đã loại bỏ');
+ state.dragons.forEach(d=>{d.lvl=Math.min(10,Math.max(1,Math.round(d.lvl)));
+  if(!(d.hab>=0&&d.hab<48&&state.plots[d.hab]&&state.plots[d.hab].t==='hab')){
+   if(d.hab!==-1){d.hab=-1;fix(`${BYID[d.sp].n}: chuồng không tồn tại → chuyển ra trại`)}}
+  if(!Number.isFinite(d.id))d.id=state.seq++});
+ const per={};state.dragons.forEach(d=>{if(d.hab>=0){const k=d.hab;per[k]=(per[k]||0)+1;
+  if(per[k]>HABSLOTS[state.plots[k].lvl]){d.hab=-1;fix(`${BYID[d.sp].n}: chuồng quá tải → chuyển ra trại`)}}});
+
+ state.eggs=(state.eggs||[]).filter(e=>e&&BYID[e.sp]&&Number.isFinite(e.end));
+ if(state.eggs.length>2){state.eggs.length=2;fix('Trứng vượt giới hạn → giữ 2')}
+ if(state.breeding&&!Number.isFinite(state.breeding.end))state.breeding=null;
+ state.dex=[...new Set((state.dex||[]).filter(id=>BYID[id]))];
+ save();updateHUD();renderIsland();
+ lastTest=res.map(([t,okr])=>`<div>${t}</div>`).join('')+
+  `<div style="margin-top:6px"><b>${fixes===0?'✅ Không tìm thấy lỗi — dữ liệu sạch!':'🔧 Đã tự sửa '+fixes+' lỗi.'}</b></div>`;
+ return lastTest}
+
+/* ================= KHỞI ĐỘNG ================= */
+const NAVS=[['island','🏝️','Quần đảo'],['shop','🛒','Cửa hàng'],['dragons','🐉','Rồng'],['breed','🥚','Lai tạo'],['arena','⚔️','Đấu trường'],['quests','🎯','Nhiệm vụ'],['book','📖','Sưu tập']];
+$('#nav').innerHTML=NAVS.map(([k,e,n])=>`<button data-k="${k}" onclick="openPanel('${k}')"><b>${e}</b>${n}</button>`).join('');
+
+load();
+const preFix=(runTests().match(/🔧/g)||[]).length;
+if(preFix)setTimeout(()=>toast(`🐞 Khởi động: đã tự sửa ${preFix} lỗi dữ liệu cũ`),800);
+updateHUD();renderIsland();markNav('island');
+setInterval(()=>{accrue();updateHUD();renderIsland();refreshTimers()},1000);
+setInterval(save,5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){
+ const gap=Date.now()-(state.last||Date.now());
+ if(gap>5000){const e=accrue(Math.min(gap,8*3600e3));if(e>500)toast(`🌙 Trong lúc vắng mặt: +${fmt(e)}🪙`)}}
+ else save()});
+window.addEventListener('beforeunload',save);
+// Vá 2 hàm lai tạo (chặn lỗi khi select rỗng)
+function startBreed(){
+ const elA=$('#bA'),elB=$('#bB');
+ if(!elA||!elB||!elA.value||!elB.value)return toast('⚠️ Cần 2 rồng Lv.3+!');
+ const a=state.dragons.find(d=>d.id===+elA.value),b=state.dragons.find(d=>d.id===+elB.value);
+ if(!a||!b||a.id===b.id)return toast('⚠️ Chọn 2 con khác nhau!');
+ if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
+ if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
+ let res=fuse(BYID[a.sp].e,BYID[b.sp].e);
+ if(BYID[a.sp].r>=2&&BYID[b.sp].r>=2&&Math.random()<.2){
+  const legs=SPECIES.filter(s=>s.r===3&&s.e.some(e=>BYID[a.sp].e.includes(e)||BYID[b.sp].e.includes(e)));
+  if(legs.length)res=pick(legs)}
+ state.breeding={a:a.id,b:b.id,aSp:a.sp,bSp:b.sp,res:res.id,end:Date.now()+60000};
+ gainXP(50);sfx('click');save();refreshModal();toast('❤️‍🔥 Hai rồng đã vào trại lai tạo!')}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(e){})}</script>
+</body>
+</html>
