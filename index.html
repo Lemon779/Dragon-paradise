@@ -53,8 +53,10 @@ button.btn.r{background:linear-gradient(180deg,#ff6b6b,#d03a3a)}
 .ts{font-size:11px;color:#9cc}
 .blog{background:#0a1a33;border-radius:8px;padding:10px;max-height:220px;overflow:auto;font-size:13px;line-height:1.6}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dragon-img{width:1.3em;height:1.3em;object-fit:contain;vertical-align:-0.25em}
 select,input{background:#0a1a33;color:#fff;border:1px solid var(--line);border-radius:6px;padding:6px;font-size:13px;max-width:100%}
+.dimg{width:64px;height:64px;object-fit:contain;flex:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35));animation:breathe 3s ease-in-out infinite}
+.dimg.sm{width:40px;height:40px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 </style>
 </head>
 <body>
@@ -161,7 +163,7 @@ function gainXP(n){state.xp+=n;let up=false;
  while(state.level<60&&state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;state.gems+=5;up=true}
  if(up){toast(`⬆️ Lên cấp ${state.level}! +5 💎`);sfx('win')}save();updateHUD()}
 
-/* ---- âm thanh (tổng hợp WebAudio, 0 KB assets) ---- */
+/* ---- âm thanh (WebAudio, 0 KB assets) ---- */
 let AC=null,mute=false;
 function sfx(kind){if(mute)return;try{
  AC=AC||new(window.AudioContext||window.webkitAudioContext)();
@@ -171,10 +173,23 @@ function sfx(kind){if(mute)return;try{
   g.gain.setValueAtTime(.07,t+i*.09);g.gain.exponentialRampToValueAtTime(.001,t+i*.09+.17);
   o.connect(g).connect(AC.destination);o.start(t+i*.09);o.stop(t+i*.09+.2)})}catch(e){}}
 
-/* ---- asset-loader: tự nhận hình thật nếu có assets/dragon_<id>.png ---- */
-const IMG={};
-Object.keys(BYID).forEach(id=>{const im=new Image();im.onload=()=>{IMG[id]=1};im.src=`assets/dragon_${id}.png`});
-const dicon=sp=>IMG[sp.id]?`<img class="dragon-img" src="assets/dragon_${sp.id}.png" alt="">`:sp.emoji;
+/* ---- asset-loader: tự dò ảnh 21 loài ở nhiều tên file, thiếu thì fallback emoji ---- */
+const IMG={};                                   /* id -> đường dẫn ảnh | null (không có) */
+const IMG_P=id=>[`img/dragon-${id}.png`,`img/dragon_${id}.png`,`assets/dragon_${id}.png`,`img/${id}.png`,`assets/${id}.png`];
+(function(){Object.keys(BYID).forEach(id=>{let k=0;const L=IMG_P(id);
+ (function tryN(){if(k>=L.length){IMG[id]=null;return}
+  const im=new Image();im.onload=()=>{IMG[id]=L[k]};im.onerror=()=>{k++;tryN()};im.src=L[k]})()})})();
+const dicon=(sp,small)=>{
+ if(!sp)return'';if(IMG[sp.id]===null)return sp.emoji;
+ const L=IMG_P(sp.id);
+ const src=(typeof IMG[sp.id]==='string')?IMG[sp.id]:L[0];
+ const i0=Math.max(0,L.indexOf(src));
+ return `<img class="dimg${small?' sm':''}" src="${src}" data-id="${sp.id}" data-emoji="${sp.emoji}" data-list='${JSON.stringify(L)}' data-i="${i0}" alt="${sp.n}" onerror="imgErr(this)">`};
+function imgErr(el){try{
+ const L=JSON.parse(el.dataset.list||'[]'),i=(+el.dataset.i||0)+1;
+ if(i<L.length){el.dataset.i=i;el.src=L[i];return}
+ IMG[el.dataset.id]=null}catch(e){}
+ el.outerHTML=el.dataset.emoji||'🐉'}
 
 /* ================= KINH TẾ ================= */
 const dragonsIn=i=>state.dragons.filter(d=>d.hab===i);
@@ -258,7 +273,7 @@ function buildHab(i){
   <button class="btn" onclick="feedD(${d.id})" ${d.lvl>=10?`disabled`:''}>🍖 ${fmt(20*d.lvl)}</button>
   <select onchange="moveD(${d.id},this.value)"><option value="">↗ Chuyển…</option>${habOptions(d)}</select></div>`).join('');
  const up=p.lvl<3?`<button class="btn" onclick="habUp(${i})">⬆️ Nâng cấp Lv.${p.lvl+1} — 🪙 ${fmt(UPG[p.lvl])}</button>`:'';
- return `<h2>${ELS[p.el].e} Chuồng ${ELS[p.el].n} <span class="rtag r${''}">Lv.${p.lvl}</span></h2>
+ return `<h2>${ELS[p.el].e} Chuồng ${ELS[p.el].n} <span class="rtag r1">Lv.${p.lvl}</span></h2>
  <div class="row">💰 Đang giữ: <b>${fmt(p.gold)}</b> / ${fmt(HABCAP[p.lvl])} <span class="spacer"></span>
   <button class="btn g" onclick="collectHab(${i})" ${p.gold<1?'disabled':''}>Thu ${fmt(p.gold)} 🪙</button></div>
  <div class="sec">Rồng trong chuồng (${n.length}/${HABSLOTS[p.lvl]})</div>${ds||'<div class="ts" style="padding:8px">Chưa có rồng — vào mục 🐉 Rồng để chuyển vào.</div>'}
@@ -358,7 +373,7 @@ function buildBreed(){
  let html='';
  if(state.breeding){const b=state.breeding,rem=b.end-Date.now();
   html+=`<div class="sec">❤️‍🔥 Đang ấp tình yêu…</div>
-  <div class="row">${BYID[b.aSp].emoji} ${BYID[b.aSp].n} + ${BYID[b.bSp].emoji} ${BYID[b.bSp].n}
+  <div class="row">${dicon(BYID[b.aSp],1)} ${BYID[b.aSp].n} + ${dicon(BYID[b.bSp],1)} ${BYID[b.bSp].n}
    <div class="prog"><i style="width:${Math.min(100,100-rem/60000*100)}%"></i></div>
    <span class="ts" data-end="${b.end}"></span></div>
   ${rem<=0?`<div class="row"><button class="btn g" onclick="claimEgg()">🥚 Nhận trứng!</button></div>`
@@ -367,33 +382,27 @@ function buildBreed(){
   <div class="row">Rồng bố: <select id="bA">${state.dragons.filter(d=>d.lvl>=3).map(d=>`<option value="${d.id}">${BYID[d.sp].emoji} ${BYID[d.sp].n} Lv.${d.lvl}</option>`).join('')||'<option value="">Chưa có rồng Lv.3+</option>'}</select></div>
   <div class="row">Rồng mẹ: <select id="bB">${state.dragons.filter(d=>d.lvl>=3).map(d=>`<option value="${d.id}">${BYID[d.sp].emoji} ${BYID[d.sp].n} Lv.${d.lvl}</option>`).join('')||'<option value="">–</option>'}</select></div>
   <div class="row">PHỤ HUYNH CẦN Lv.3 TRỞ LÊN <span class="spacer"></span>
-  <button class="btn g" onclick="startBreed()">❤️ Laiving — 🪙 300 · 60s</button></div>`;
+  <button class="btn g" onclick="startBreed()">❤️ Lai tạo — 🪙 300 · 60s</button></div>`;
  html+=`<div class="sec">🥚 Ấp ủ (${state.eggs.length}/2)</div>`;
  if(!state.eggs.length)html+='<div class="ts" style="padding:6px">Chưa có trứng nào.</div>';
  state.eggs.forEach((e,i)=>{const sp=BYID[e.sp],rdy=e.end<=Date.now();
-  html+=`<div class="row">${rdy?dicon(sp):'❓'} <b>${rdy?sp.n:'Trứng (ẩn)'}</b>
+  html+=`<div class="row">${rdy?dicon(sp,1):'❓'} <b>${rdy?sp.n:'Trứng (ẩn)'}</b>
    <span class="rtag r${sp.r}">${rdy?RNAMES[sp.r]:'???'}</span><span class="spacer"></span>
    ${rdy?`<button class="btn g" onclick="hatchEgg(${i})">🐣 Nở!</button>`
     :`<span class="ts" data-end="${e.end}"></span><button class="btn" onclick="speedEgg(${i})">💎 ${Math.ceil((e.end-Date.now())/60000)+1}</button>`}</div>`});
- return `<h2>🥚 Lai tạo &amp; Ấp ủ</h2>${html}
+ return `<h2>🥚 Lai tạo &amp; ấp ủ</h2>${html}
  <div class="ts" style="padding:6px">Lai 2 hệ khác nhau có thể ra <b>rồng lai</b> hiếm hơn — thử Hỏa+Băng 👀</div>`}
 function startBreed(){
- const a=state.dragons.find(d=>d.id===+$('#bA').value),b=state.dragons.find(d=>d.id===+$('#bB').value);
- if(!a||!b)return toast('⚠️ Cần 2 rồng Lv.3+!');
- if(a.id===b.id)return toast('⚠️ Không thể lai với chính nó!');
- if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
- if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
- let res=fuse(a.e?BYID[d]:BYID[a.sp].e,BYID[b.sp].e,['']);// placeholder tránh lỗi cú pháp
- return}
-/* NOTE: hàm startBreed thật ở dưới (đè bản placeholder) */
-function startBreedReal(){
- const a=state.dragons.find(d=>d.id===+$('#bA').value),b=state.dragons.find(d=>d.id===+$('#bB').value);
- if(!a||!b||a.id===b.id)return toast('⚠️ Kiểm tra lại bố mẹ!');
+ const elA=$('#bA'),elB=$('#bB');
+ if(!elA||!elB||!elA.value||!elB.value)return toast('⚠️ Cần 2 rồng Lv.3+!');
+ const a=state.dragons.find(d=>d.id===+elA.value),b=state.dragons.find(d=>d.id===+elB.value);
+ if(!a||!b||a.id===b.id)return toast('⚠️ Chọn 2 con khác nhau!');
  if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
  if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
  let res=fuse(BYID[a.sp].e,BYID[b.sp].e);
- if(BYID[a.sp].r>=2&&BYID[b.sp].r>=2&&Math.random()<.2)
-  res=pick(SPECIES.filter(s=>s.r===3&&s.e.some(e=>BYID[a.sp].e.includes(e)||BYID[b.sp].e.includes(e)))||SPECIES.filter(s=>s.r===3))||res;
+ if(BYID[a.sp].r>=2&&BYID[b.sp].r>=2&&Math.random()<.2){
+  const legs=SPECIES.filter(s=>s.r===3&&s.e.some(e=>BYID[a.sp].e.includes(e)||BYID[b.sp].e.includes(e)));
+  if(legs.length)res=pick(legs)}
  state.breeding={a:a.id,b:b.id,aSp:a.sp,bSp:b.sp,res:res.id,end:Date.now()+60000};
  gainXP(50);sfx('click');save();refreshModal();toast('❤️‍🔥 Hai rồng đã vào trại lai tạo!')}
 function claimEgg(){
@@ -473,10 +482,19 @@ function claimGoal(id){const g=GOALS.find(x=>x.id===id);
 function buildBook(){
  return `<h2>📖 Bộ sưu tập (${state.dex.length}/${SPECIES.length})</h2>
  <div class="grid2">`+SPECIES.map(s=>{const has=state.dex.includes(s.id);
-  return `<div class="row">${has?dicon(s):'❓'} <div><b>${has?s.n:'???'}</b> <span class="rtag r${s.r}">${RNAMES[s.r]}</span><br>
+  return `<div class="row">${has?dicon(s,1):'❓'} <div><b>${has?s.n:'???'}</b> <span class="rtag r${s.r}">${RNAMES[s.r]}</span><br>
   <span class="ts">${has?s.e.map(e=>ELS[e].e+ELS[e].n).join(' '):'Chưa phát hiện'}</span></div></div>`}).join('')+'</div>'}
 
 /* ---- debug / self-test ---- */
+function imgStatus(){
+ const ids=Object.keys(BYID);
+ const ok=ids.filter(id=>typeof IMG[id]==='string'),
+       miss=ids.filter(id=>IMG[id]===null);
+ return `<div class="sec">🖼️ Ảnh rồng: ${ok.length}/${ids.length} đã nạp</div>
+ ${miss.length?`<div class="ts" style="padding:4px">❌ Thiếu ảnh (đang fallback emoji): <b>${miss.map(id=>`dragon-${id}.png`).join(' · ')}</b></div>`
+  :ok.length===ids.length?'<div class="ts" style="padding:4px">✅ Đủ ảnh cho cả 21 loài!</div>'
+  :'<div class="ts" style="padding:4px">⏳ Đang dò ảnh… mở lại panel sau 2–3 giây.</div>'}
+ <div class="ts" style="padding:4px">Thứ tự dò tên: img/dragon-&lt;id&gt;.png → img/dragon_&lt;id&gt;.png → assets/dragon_&lt;id&gt;.png → img/&lt;id&gt;.png → assets/&lt;id&gt;.png</div>`}
 function buildDebug(){
  return `<h2>🐞 Debug &amp; Chẩn đoán</h2>
  <div class="row"><button class="btn" onclick="dbg('+gold')">🪙 +10k</button>
@@ -487,6 +505,7 @@ function buildDebug(){
  <button class="btn" onclick="dbgImport()">📥 Nhập save</button>
  <button class="btn r" onclick="if(confirm('Xoá toàn bộ?')){localStorage.removeItem('dragonParadise_v2');location.reload()}">🗑️ Reset</button>
  <label style="margin-left:auto;font-size:13px">🔇 <input type="checkbox" onchange="mute=this.checked"></label></div>
+ ${imgStatus()}
  <div class="row"><button class="btn g" onclick="$('#dbgout').innerHTML=runTests()">🧪 CHẠY CHẨN ĐOÁN &amp; TỰ SỬA</button></div>
  <div id="dbgout" class="blog">${lastTest}</div>`}
 let lastTest='Chưa chạy chẩn đoán. Nhấn nút để kiểm tra toàn bộ dữ liệu game.';
@@ -554,20 +573,6 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){
  if(gap>5000){const e=accrue(Math.min(gap,8*3600e3));if(e>500)toast(`🌙 Trong lúc vắng mặt: +${fmt(e)}🪙`)}}
  else save()});
 window.addEventListener('beforeunload',save);
-// Vá 2 hàm lai tạo (chặn lỗi khi select rỗng)
-function startBreed(){
- const elA=$('#bA'),elB=$('#bB');
- if(!elA||!elB||!elA.value||!elB.value)return toast('⚠️ Cần 2 rồng Lv.3+!');
- const a=state.dragons.find(d=>d.id===+elA.value),b=state.dragons.find(d=>d.id===+elB.value);
- if(!a||!b||a.id===b.id)return toast('⚠️ Chọn 2 con khác nhau!');
- if(state.eggs.length>=2)return toast('⚠️ Ấp ủ đã đầy!');
- if(!spend({gold:300}))return toast('❌ Không đủ vàng!');
- let res=fuse(BYID[a.sp].e,BYID[b.sp].e);
- if(BYID[a.sp].r>=2&&BYID[b.sp].r>=2&&Math.random()<.2){
-  const legs=SPECIES.filter(s=>s.r===3&&s.e.some(e=>BYID[a.sp].e.includes(e)||BYID[b.sp].e.includes(e)));
-  if(legs.length)res=pick(legs)}
- state.breeding={a:a.id,b:b.id,aSp:a.sp,bSp:b.sp,res:res.id,end:Date.now()+60000};
- gainXP(50);sfx('click');save();refreshModal();toast('❤️‍🔥 Hai rồng đã vào trại lai tạo!')}
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(e){})}</script>
 </body>
